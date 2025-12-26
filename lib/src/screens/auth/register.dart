@@ -17,8 +17,9 @@ class RegisterScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final emailController = useTextEditingController();
     final firstNameController = useTextEditingController();
-    final passwordController = useTextEditingController();
     final lastNameController = useTextEditingController();
+
+    final passwordController = useTextEditingController();
     final theme = Theme.of(context); // Access the theme
 
     final isFilled = useState(false);
@@ -193,10 +194,11 @@ class RegisterScreen extends HookConsumerWidget {
                                 ref
                                     .read(authProvider.notifier)
                                     .verifyEmail(
-                                      emailController.text.trim(),
-                                      passwordController.text.trim(),
-                                      firstNameController.text.trim(),
-                                      lastNameController.text.trim(),
+                                      firstName: firstNameController.text
+                                          .trim(),
+                                      lastName: lastNameController.text.trim(),
+                                      email: emailController.text.trim(),
+                                      password: passwordController.text,
                                     );
                               }
                             : null,

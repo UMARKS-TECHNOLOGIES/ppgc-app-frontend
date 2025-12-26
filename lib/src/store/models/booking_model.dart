@@ -1,41 +1,91 @@
+int _asInt(dynamic value, {int defaultValue = 0}) {
+  if (value == null) return defaultValue;
+
+  if (value is int) return value;
+
+  if (value is double) return value.toInt();
+
+  if (value is num) return value.toInt();
+
+  if (value is String) {
+    return int.tryParse(value) ?? defaultValue;
+  }
+
+  return defaultValue;
+}
+
+String _asString(dynamic value) => value == null ? '' : value.toString();
+
+double _asDouble(dynamic value, {double defaultValue = 0.0}) {
+  if (value is num) return value.toDouble();
+  return defaultValue;
+}
+
+String _formatPrice(dynamic value) {
+  if (value is num) return value.toString();
+  return '0';
+}
+
+bool? _asBoolNullable(dynamic value) {
+  if (value is bool) return value;
+  return null;
+}
+
 class HotelRoom {
   final String id;
   final String imageUrl;
+  final List<String> otherImages;
   final String roomName;
   final String hotelName;
   final String location;
   final String pricePerNight;
   final double rating;
-  final bool isPopular;
+  final String description;
+  final List<String> amenities;
+  final int bedCount;
+  final int maxOccupancy;
+  final bool? isPopular; // null-safe as requested
 
   const HotelRoom({
     required this.id,
     required this.imageUrl,
+
     required this.roomName,
     required this.hotelName,
     required this.location,
     required this.pricePerNight,
     required this.rating,
-    this.isPopular = false,
+    required this.isPopular,
+    required this.description,
+    required this.amenities,
+    required this.bedCount,
+    required this.maxOccupancy,
+    required this.otherImages,
   });
 
-  /// 🔐 Defensive JSON parser
+  /// 🔐 Defensive JSON parser aligned to actual API
   factory HotelRoom.fromJson(Map<String, dynamic> json) {
     return HotelRoom(
       id: _asString(json['id']),
-      imageUrl: _asString(
-        json['image_url'] ?? json['image'] ?? json['thumbnail'],
-      ),
-      roomName: _asString(json['room_name'] ?? json['name']),
-      hotelName: _asString(json['hotel_name'] ?? json['hotel']),
-      location: _asString(json['location']),
-      pricePerNight: _formatPrice(json['price_per_night'] ?? json['price']),
-      rating: _asDouble(json['rating'], defaultValue: 0.0),
-      isPopular: _asBool(json['is_popular']),
+      imageUrl: _asString(json['cover_image']?['secure_url']),
+      roomName: _asString(json['room_number']),
+      description: _asString(json['description']),
+      hotelName: _asString(json['hotel_id']),
+      location: _asString(json['status']),
+      bedCount: _asInt(json['bed_count']),
+      pricePerNight: _formatPrice(json['price_per_night']),
+      rating: json['available'] == true ? 1.0 : 0.0,
+      amenities: List<String>.from(json['amenities'] ?? []),
+      otherImages:
+          (json['other_images'] as List<dynamic>?)
+              ?.map((e) => e['secure_url'] as String)
+              .toList() ??
+          [],
+      maxOccupancy: _asInt(json['max_occupancy']),
+      isPopular: _asBoolNullable(json['is_popular']),
     );
   }
 
-  /// Optional but recommended
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -46,44 +96,12 @@ class HotelRoom {
       'price_per_night': pricePerNight,
       'rating': rating,
       'is_popular': isPopular,
+      'description': description,
+      'amenities': amenities,
+      'bed_count': bedCount,
+      'max_occupancy': maxOccupancy,
+      'other_images': otherImages,
     };
-  }
-
-  // ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  // SAFE TYPE CONVERTERS
-  // ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-  static String _asString(dynamic value, {String defaultValue = ''}) {
-    if (value == null) return defaultValue;
-    return value.toString();
-  }
-
-  static double _asDouble(dynamic value, {double defaultValue = 0.0}) {
-    if (value == null) return defaultValue;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString()) ?? defaultValue;
-  }
-
-  static bool _asBool(dynamic value) {
-    if (value == null) return false;
-    if (value is bool) return value;
-    if (value is num) return value == 1;
-    return value.toString().toLowerCase() == 'true';
-  }
-
-  static String _formatPrice(dynamic value) {
-    if (value == null) return '';
-
-    if (value is num) {
-      return '₦${value.toStringAsFixed(0)} / Night';
-    }
-
-    final parsed = double.tryParse(value.toString());
-    if (parsed != null) {
-      return '₦${parsed.toStringAsFixed(0)} / Night';
-    }
-
-    return value.toString();
   }
 }
 

@@ -19,8 +19,6 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
 
-    print(profile);
-
     // Defensive UI: profile not yet loaded
     if (profile == null) {
       return const Scaffold(
@@ -48,9 +46,9 @@ class ProfileScreen extends ConsumerWidget {
             ),
             _ProfileDetailRow(
               label: "Phone Number",
-              value: profile.phoneNumber ?? "—",
+              value: profile.phoneNumber,
             ),
-            _ProfileDetailRow(label: "Gender", value: profile.gender ?? "—"),
+            _ProfileDetailRow(label: "Gender", value: profile.gender),
             _ProfileDetailRow(label: "Email", value: profile.email),
 
             /// Address (wrap-safe)
@@ -66,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(width: 20),
                   Expanded(
                     child: Text(
-                      profile.address ?? "—",
+                      profile.address,
                       textAlign: TextAlign.right,
                       style: const TextStyle(
                         color: kPrimaryBlack,
@@ -79,7 +77,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
 
-            _ProfileDetailRow(label: "NIN", value: profile.nin ?? "—"),
+            _ProfileDetailRow(label: "NIN", value: profile.nin),
 
             const SizedBox(height: 40),
 

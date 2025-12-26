@@ -1,5 +1,12 @@
 /// Enum for async state handling
-enum PropertyStatus { idle, loading, loaded, error }
+enum PropertyStatus {
+  idle,
+  loading,
+  loaded,
+  error,
+  submittingInspection,
+  submittedInspection,
+}
 
 /// Submodel for property area/location
 ///
@@ -171,6 +178,47 @@ class Property {
       'area': area,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+}
+
+// Property Inspection Request Model
+class PropertyInspectionRequest {
+  final String propertyId;
+  final String fullName;
+  final String phone;
+  final String note;
+  final String date; // formatted string (e.g. "September 23, 2025")
+  final String time; // formatted string (e.g. "10:30 AM")
+
+  const PropertyInspectionRequest({
+    required this.propertyId,
+    required this.fullName,
+    required this.phone,
+    required this.note,
+    required this.date,
+    required this.time,
+  });
+
+  factory PropertyInspectionRequest.fromJson(Map<String, dynamic> json) {
+    return PropertyInspectionRequest(
+      propertyId: json['propertyId'] as String,
+      fullName: json['fullName'] as String,
+      phone: json['phone'] as String,
+      note: json['note'] as String,
+      date: json['date'] as String,
+      time: json['time'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'propertyId': propertyId,
+      'fullName': fullName,
+      'phone': phone,
+      'note': note,
+      'date': date,
+      'time': time,
     };
   }
 }

@@ -152,7 +152,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           : ListView.separated(
               itemCount: notifications.length,
               separatorBuilder: (context, index) => Divider(
-                color: kBorderGrey.withOpacity(0.5),
+                color: kBorderGrey.withValues(alpha: 0.5),
                 height: 1,
                 indent: 80, // Offset divider to align with text content
               ),
@@ -190,7 +190,6 @@ class _NotificationTile extends StatelessWidget {
       case NotificationType.security:
         return {'color': kAccentRed, 'icon': Icons.shield_rounded};
       case NotificationType.info:
-      default:
         return {'color': kSecondaryGrey, 'icon': Icons.info_outline_rounded};
     }
   }
@@ -217,7 +216,9 @@ class _NotificationTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: typeColor.withOpacity(0.1), // Light pastel background
+                color: typeColor.withValues(
+                  alpha: 0.1,
+                ), // Light pastel background
                 shape: BoxShape.circle,
               ),
               child: Icon(typeIcon, color: typeColor, size: 24),
@@ -272,7 +273,7 @@ class _NotificationTile extends StatelessWidget {
                             fontSize: 14,
                             color: notification.isRead
                                 ? kSecondaryGrey
-                                : kPrimaryBlack.withOpacity(0.8),
+                                : kPrimaryBlack.withValues(alpha: 0.8),
                             height: 1.4,
                           ),
                         ),

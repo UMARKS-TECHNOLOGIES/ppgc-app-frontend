@@ -21,8 +21,8 @@ class RoomListTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        splashColor: Colors.grey.withOpacity(0.15),
-        highlightColor: Colors.grey.withOpacity(0.05),
+        splashColor: Colors.grey.withValues(alpha: 0.15),
+        highlightColor: Colors.grey.withValues(alpha: 0.05),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(10),
@@ -31,9 +31,9 @@ class RoomListTile extends StatelessWidget {
             children: [
               NetworkImageFallback(
                 imageUrl: room.imageUrl,
-                height: 70,
-                width: 70,
-                borderRadius: 12,
+                height: 80,
+                width: 80,
+                borderRadius: BorderRadius.circular(12),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -77,7 +77,10 @@ class AvailableRoomsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rooms = ref.watch(roomProvider).rooms;
+    final roomState = ref.watch(roomProvider);
+    final roomNotifier = ref.read(roomProvider.notifier);
+
+    final rooms = roomState.rooms;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
@@ -89,14 +92,35 @@ class AvailableRoomsSection extends ConsumerWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ...rooms.map(
-            (r) => RoomListTile(
-              room: r,
+
+          for (int i = 0; i < rooms.length; i++) ...[
+            RoomListTile(
+              room: rooms[i],
               onTap: () {
-                context.push(AppRoutes.singleRoom(r.id));
+                context.push(AppRoutes.singleRoom(rooms[i].id));
               },
             ),
-          ),
+
+            // 🔹 Trigger pagination near the end
+            if (i == rooms.length - 1 &&
+                roomState.hasMore &&
+                !roomState.isPaginating)
+              Builder(
+                builder: (_) {
+                  Future.microtask(() {
+                    roomNotifier.fetchMore();
+                  });
+                  return const SizedBox.shrink();
+                },
+              ),
+          ],
+
+          // 🔹 Pagination loader
+          if (roomState.isPaginating)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );

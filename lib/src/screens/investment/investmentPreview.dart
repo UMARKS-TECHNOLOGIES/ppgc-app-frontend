@@ -1,21 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../store/investment_provider.dart';
 
 // --- Theme Colors ---
 const Color kPrimaryYellow = Color(0xFFEED202);
-const Color kLightGreyCard = Color(
-  0xFFF8F8F8,
-); // A very light grey for the card
+const Color kLightGreyCard = Color(0xFFF8F8F8);
 const Color kTextBlack = Color(0xFF1A1A1A);
 const Color kTextGrey = Color(0xFF828282);
 
-class PreviewScreen extends StatelessWidget {
-  final VoidCallback onBack;
-  final Map<String, dynamic> package;
-
-  const PreviewScreen({super.key, required this.onBack, required this.package});
+class PreviewScreen extends ConsumerWidget {
+  const PreviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final draft = ref.watch(investmentProvider).draft;
+
+    final amount = draft.amount ?? 0;
+    final name = (draft.name?.isNotEmpty ?? false) ? draft.name! : "-";
+    final percentage = draft.percentage ?? 0;
+
+    final DateTime investmentDate = DateTime.now();
+
+    final int durationDays;
+    final String interestLabel;
+
+    switch (percentage) {
+      case 2:
+        durationDays = 30;
+        interestLabel = "2% Monthly";
+        break;
+      case 10:
+        durationDays = 90;
+        interestLabel = "10% Quarterly";
+        break;
+      case 15:
+        durationDays = 180;
+        interestLabel = "15% Half yearly";
+        break;
+      default:
+        durationDays = 365;
+        interestLabel = "30% Yearly";
+    }
+
+    final maturityDate = investmentDate.add(Duration(days: durationDays));
+
+    final currency = NumberFormat.currency(
+      locale: "en_NG",
+      symbol: "₦",
+      decimalDigits: 2,
+    );
+
+    final dateFormat = DateFormat("dd MMM yyyy");
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -60,7 +99,6 @@ class PreviewScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Details Card
                   Container(
                     padding: const EdgeInsets.all(20.0),
                     decoration: BoxDecoration(
@@ -68,27 +106,33 @@ class PreviewScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
-                      children: const [
+                      children: [
                         _DetailRow(
                           label: "Amount",
-                          value: "₦40,000.00",
+                          value: currency.format(amount),
                           isBold: true,
                         ),
-                        SizedBox(height: 12),
-                        _DetailRow(label: "Name", value: "Hair"),
-                        SizedBox(height: 12),
-                        _DetailRow(label: "Duration (Days)", value: "30"),
-                        SizedBox(height: 12),
-                        _DetailRow(label: "Interest rate", value: "2% Monthly"),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
+                        _DetailRow(label: "Name", value: name),
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: "Duration (Days)",
+                          value: durationDays.toString(),
+                        ),
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: "Interest rate",
+                          value: interestLabel,
+                        ),
+                        const SizedBox(height: 12),
                         _DetailRow(
                           label: "Investment date",
-                          value: "30 Apr 2025",
+                          value: dateFormat.format(investmentDate),
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         _DetailRow(
                           label: "Maturity date",
-                          value: "30 May 2025",
+                          value: dateFormat.format(maturityDate),
                         ),
                       ],
                     ),
@@ -96,9 +140,12 @@ class PreviewScreen extends StatelessWidget {
 
                   const SizedBox(height: 25),
 
-                  const Text(
-                    "₦40,000 will be invested until 30 May 2025. Actual duration and interest may vary based on the maturity date. If you wish to liquidate your funds, 100% of interest earned will be deducted.",
-                    style: TextStyle(
+                  Text(
+                    "${currency.format(amount)} will be invested until "
+                    "${dateFormat.format(maturityDate)}. Actual duration and "
+                    "interest may vary based on the maturity date. If you wish "
+                    "to liquidate your funds, 100% of interest earned will be deducted.",
+                    style: const TextStyle(
                       fontSize: 14,
                       color: kTextGrey,
                       height: 1.5,
@@ -107,38 +154,73 @@ class PreviewScreen extends StatelessWidget {
                 ]),
               ),
             ),
-            // Bottom section (button)
+
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
                 padding: const EdgeInsets.all(18.0),
                 child: Align(
                   alignment: Alignment.bottomCenter,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Processing Payment..."),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 55,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              ref
+                                  .read(investmentProvider.notifier)
+                                  .resetDraft();
+                              context.go('/investment');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: kTextBlack,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: const BorderSide(color: kTextGrey),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            child: const Text("Cancel"),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryYellow,
-                        foregroundColor: kTextBlack,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      child: const Text("Payment ₦40,000.00"),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 55,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Processing Payment..."),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimaryYellow,
+                              foregroundColor: kTextBlack,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            child: Text(
+                              "Payment ₦${amount.toStringAsFixed(2)}",
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -150,7 +232,7 @@ class PreviewScreen extends StatelessWidget {
   }
 }
 
-// Helper widget for a row in the details card
+// Helper widget (unchanged)
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;

@@ -39,6 +39,7 @@ enum AuthStatus {
   verifyingEmail,
   emailSent,
   emailVerificationFailed,
+  verified,
 
   //
 }

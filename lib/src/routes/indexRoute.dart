@@ -31,6 +31,7 @@ import '../screens/terms_and_conditions_screen.dart';
 import '../store/authProvider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final authNotifier = ref.read(authProvider.notifier);
   final isLoggedIn = ref.watch(isLoggedInProvider);
   final firstLaunchAsync = ref.watch(firstLaunchProvider);
   final authBootstrapAsync = ref.watch(localAuthStatusProvider);
@@ -39,6 +40,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/onboarding',
     redirect: (context, state) {
       if (firstLaunchAsync.isLoading ||
+          authBootstrapAsync.isLoading ||
           firstLaunchAsync.hasError ||
           authBootstrapAsync.isLoading ||
           authBootstrapAsync.hasError) {
@@ -80,26 +82,50 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ShellRoute (protected area)
       ShellRoute(
         builder: (context, state, child) {
-          final path = state.fullPath ?? '';
-          PreferredSizeWidget? appBar;
+          return Consumer(
+            builder: (context, ref, _) {
+              final user = ref.watch(userProfileProvider);
 
-          if (path.startsWith('/home')) {
-            appBar = buildDynamicAppBar(path, context);
-          } else if (path.startsWith(AppRoutes.booking)) {
-            appBar = AppBar();
-          } else if (path.startsWith(AppRoutes.investment)) {
-            appBar = investmentAppBar(path, context);
-          } else if (path.startsWith(AppRoutes.saving)) {
-            appBar = customAppBar(title: "Savings", context: context);
-          } else if (path.startsWith(AppRoutes.profile)) {
-            appBar = customAppBar(
-              context: context,
-              title: "Profile",
-              isAction: false,
-            );
-          }
+              final path = state.fullPath ?? '';
+              PreferredSizeWidget? appBar;
 
-          return DefaultScreen(appBar: appBar, child: child);
+              if (path.startsWith('/home') && user != null) {
+                appBar = buildDynamicAppBar(
+                  path: path,
+                  context: context,
+                  user: user,
+                  location: 'Lagos, Nigeria',
+                );
+              } else if (path.startsWith(AppRoutes.booking)) {
+                appBar = customAppBar(
+                  title: "Booking",
+                  isCenterTitle: false,
+                  context: context,
+                );
+              } else if (path.startsWith(AppRoutes.investment)) {
+                appBar = investmentAppBar(path, context);
+              } else if (path.startsWith(AppRoutes.saving)) {
+                appBar = customAppBar(title: "Savings", context: context);
+              } else if (path.startsWith(AppRoutes.profile)) {
+                appBar = customAppBar(
+                  context: context,
+                  title: "Profile",
+                  action: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: IconButton(
+                        //
+                        onPressed: () => authNotifier.logout(),
+                        icon: Icon(Icons.logout),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return DefaultScreen(appBar: appBar, child: child);
+            },
+          );
         },
         routes: [
           GoRoute(path: '/home', builder: (_, __) => HomeScreen()),
@@ -118,10 +144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Auth (PUBLIC)
       GoRoute(path: '/auth/login', builder: (_, __) => LoginScreen()),
-      GoRoute(
-        path: '/auth/forgot-password',
-        builder: (_, __) => const ForgotPasswordScreen(),
-      ),
+
       GoRoute(
         path: '/auth/verify-token',
         builder: (_, state) => OTPVerificationScreen(),
@@ -135,25 +158,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => PasswordChangedSuccesScreen(),
       ),
       GoRoute(path: '/auth/register', builder: (_, __) => RegisterScreen()),
-
-      GoRoute(path: '/home', builder: (context, state) => HomeScreen()),
-      GoRoute(
-        path: '/investment',
-        builder: (context, state) =>
-            FindInvestmentScreen(onLandBankingTap: () {}),
-      ),
-      GoRoute(path: '/booking', builder: (context, state) => BookingScreen()),
-      GoRoute(
-        path: '/saving',
-        builder: (context, state) => SavingsHomeScreen(),
-      ),
-      GoRoute(path: '/profile', builder: (context, state) => ProfileScreen()),
-
-      GoRoute(
-        path: '/onboarding',
-        builder: (context, state) => OnboardingScreen(),
-      ),
-
       GoRoute(path: '/auth/login', builder: (context, state) => LoginScreen()),
       GoRoute(
         path: '/auth/forgot-password',
@@ -162,7 +166,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.otpRecovery,
         builder: (context, state) {
-          final email = state.extra as String;
           return OTPVerificationScreen();
         },
       ),
@@ -181,6 +184,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.register,
         builder: (context, state) => RegisterScreen(),
       ),
+
+      // Terms and Conditions screen route
       GoRoute(
         path: AppRoutes.terms_condition,
         builder: (context, state) {
@@ -188,6 +193,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return PrivacyPolicyPage(url: url);
         },
       ),
+      // Success screen route
       GoRoute(
         path: AppRoutes.done,
         builder: (context, state) {
@@ -195,11 +201,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SystemSuccess(message: message);
         },
       ),
+
+      // property routes
       GoRoute(
         path: AppRoutes.singleProperty,
         builder: (context, state) {
-          final propertyId = state.extra as String;
-          return SinglePropertyScreen(propertyId: propertyId);
+          return SinglePropertyScreen();
         },
       ),
       GoRoute(
@@ -209,6 +216,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           return BookInspectionScreen(propertyId: propertyId);
         },
       ),
+
+      // investment routes
       GoRoute(
         path: '/add-investment',
         builder: (context, state) {
@@ -219,21 +228,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/add-investment-step2',
         builder: (context, state) {
-          final category = state.extra as Map<String, dynamic>;
-          return CreateInvestmentScreen(onBack: () {}, package: category);
+          return CreateInvestmentScreen();
         },
       ),
       GoRoute(
         path: '/preview-investment',
         builder: (context, state) {
-          final category = state.extra as Map<String, dynamic>;
-          return PreviewScreen(onBack: () {}, package: category);
+          return PreviewScreen();
         },
       ),
+
+      // Hotel Booking Routes
       GoRoute(
         path: '/booking/room/:id',
         builder: (context, state) {
-          final roomId = state.pathParameters['id']!;
           return const RoomDetailScreen();
         },
       ),
@@ -241,6 +249,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/booking/review-summary',
         builder: (context, state) => const ReviewSummaryScreen(),
       ),
+
+      // Profile Routes
       GoRoute(
         path: AppRoutes.editProfile,
         builder: (context, state) => const EditProfileScreen(),

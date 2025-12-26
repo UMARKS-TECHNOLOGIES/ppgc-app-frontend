@@ -1,211 +1,194 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:ppgc_pro/src/components/property/propertyTourWidget.dart';
-import 'package:ppgc_pro/src/components/titleWidget.dart';
-import 'package:ppgc_pro/src/routes/routeConstant.dart';
-import 'package:ppgc_pro/src/utils/themeData.dart';
+import 'package:ppgc_pro/src/components/faildImageFallBack.dart';
 
 import '../../components/property/detailShimmer.dart';
+import '../../components/property/propertyTourWidget.dart';
 import '../../components/shared/btnsWidgets.dart';
+import '../../components/titleWidget.dart';
+import '../../routes/routeConstant.dart';
 import '../../store/models/property_models.dart';
 import '../../store/property_provider.dart';
+import '../../utils/themeData.dart';
 
 class SinglePropertyScreen extends HookConsumerWidget {
-  final String propertyId;
-
-  const SinglePropertyScreen({required this.propertyId, super.key});
+  const SinglePropertyScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final propertyState = ref.watch(propertyProvider);
-
-    // Trigger fetch when widget mounts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (propertyState.property?.id != propertyId) {
-        ref.read(propertyProvider.notifier).fetchPropertyById(propertyId);
-      }
-    });
-
-    final propertyNotifier = ref.read(
-      propertyProvider.notifier,
-    ); // Get the notifier
+    final propertyNotifier = ref.read(propertyProvider.notifier);
 
     Widget body;
 
     switch (propertyState.status) {
       case PropertyStatus.loading:
         body = const PropertyDetailsShimmer();
-
         break;
+
       case PropertyStatus.error:
-        body = Center(child: Text('Error: ${propertyState.errorMessage}'));
+        body = Center(
+          child: Text(
+            'Error: ${propertyState.errorMessage ?? "Something went wrong"}',
+          ),
+        );
         break;
 
       case PropertyStatus.loaded:
-        final property = propertyState.property!;
+        final property = propertyState.property;
+
+        if (property == null) {
+          body = const PropertyDetailsShimmer();
+          break;
+        }
 
         body = SingleChildScrollView(
           child: Column(
             children: [
-              // Image & overlay
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Stack(
-                    children: [
-                      Image.network(
-                        property.coverImageUrl ?? '',
-                        width: double.infinity,
-                        height: 250,
-                        fit: BoxFit.cover,
-                      ),
-                      Container(
-                        width: double.infinity,
-                        height: 250,
-                        color: Colors.black12,
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.favorite_border,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 12,
-                        bottom: 12,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              property.title ?? '',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(1, 1),
-                                    blurRadius: 3,
-                                    color: Colors.black38,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  property.area.cityOrTown ?? '',
-                                  style: TextStyle(
-                                    color: AppColors.lightGrayColor,
-                                    shadows: const [
-                                      Shadow(
-                                        offset: Offset(1, 1),
-                                        blurRadius: 3,
-                                        color: Colors.black38,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.location_on,
-                                  color: AppColors.lightGrayColor,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+              Stack(
+                children: [
+                  NetworkImageFallback(
+                    imageUrl: property.coverImageUrl,
+                    height: 250,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.all(Radius.zero),
                   ),
-                ),
+                  Container(
+                    width: double.infinity,
+                    height: 250,
+                    color: Colors.black12,
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: InkWell(
+                      onTap: () => {},
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.favorite_border,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
 
-              // Description
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TitleWidget(title: "Description"),
-                    const SizedBox(height: 6),
-                    Text(
-                      property.description ?? '',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          property.title,
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          property.price,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-
-              // Attributes
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                width: double.infinity,
-                // child: Column(
-                //   crossAxisAlignment: CrossAxisAlignment.start,
-                //   children: attributes.entries
-                //       .map(
-                //         (e) => buildAttributeRow(
-                //           e.key,
-                //           e.value,
-                //           icon: iconMap[e.key],
-                //         ),
-                //       )
-                //       .toList(),
-                // ),
-              ),
-
-              // Apartment Tour
-              if (property.otherImages.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          property.area.cityOrTown,
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                        const Icon(
+                          Icons.location_on,
+                          color: AppColors.grayColor,
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
-                    const TitleWidget(title: "Apartment Tour"),
-                    PropertyTourGallery(images: property.otherImages),
+
+                    // description
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const TitleWidget(title: "Description"),
+                        const SizedBox(height: 6),
+                        Text(
+                          property.description,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
+
+                    if (property.otherImages.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          const TitleWidget(title: "Apartment Tour"),
+                          PropertyTourGallery(images: property.otherImages),
+                        ],
+                      ),
                   ],
                 ),
+              ),
 
-              // Inspect / Buy Buttons
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 40),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    OutlineBTNWidget(
-                      title: "Inspect",
-                      onPressed: () {
-                        context.push(
-                          AppRoutes.inspect_property,
-                          extra: property.id,
-                        );
-                      },
+                    SizedBox(
+                      width: 140,
+                      child: OutlineBTNWidget(
+                        title: "Inspect",
+                        onPressed: () {
+                          context.push(
+                            AppRoutes.inspect_property,
+                            extra: property.id,
+                          );
+                        },
+                      ),
                     ),
                     const SizedBox(width: 40),
-                    const BTNWidget(title: "Buy now"),
+                    SizedBox(
+                      width: 140,
+                      child: const BTNWidget(title: "Buy now"),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
         );
+
         break;
 
       case PropertyStatus.idle:
         body = const SizedBox.shrink();
+        break;
+      case PropertyStatus.submittingInspection:
+        body = const SizedBox.shrink();
+
+        break;
+      case PropertyStatus.submittedInspection:
+        body = const SizedBox.shrink();
+        break;
     }
 
     return Scaffold(

@@ -3,20 +3,28 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:ppgc_pro/src/routes/routeConstant.dart';
 import 'package:ppgc_pro/src/utils/themeData.dart';
 
-import '../../store/authProvider.dart'; // Your custom colors
+import '../../store/authProvider.dart';
+import '../../store/models/user_models.dart'; // Your custom colors
 
 class OTPVerificationScreen extends HookConsumerWidget {
   const OTPVerificationScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final preReg = ref.watch(authProvider).preReg;
     final otpController = useTextEditingController();
     final isCompleted = useState(false);
     final data = ref.watch(authProvider).preReg;
     final email = data?.email ?? '';
+
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (previous?.status != AuthStatus.emailSent &&
+          next.status == AuthStatus.verified) {
+        context.push('/auth/login');
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Verify OTP')),
@@ -33,7 +41,7 @@ class OTPVerificationScreen extends HookConsumerWidget {
                   children: [
                     const SizedBox(height: 20),
                     Text(
-                      "An SMS code was sent to this email ",
+                      "An email with a verification code was sent to this email ",
 
                       style: TextStyle(fontSize: 18),
                       textAlign: TextAlign.center,
@@ -51,12 +59,14 @@ class OTPVerificationScreen extends HookConsumerWidget {
 
                     PinCodeTextField(
                       appContext: context,
-                      length: 5,
+                      length: 4,
                       controller: otpController,
                       autoFocus: true,
                       animationType: AnimationType.fade,
                       keyboardType: TextInputType.number,
                       cursorColor: AppColors.blueColor,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 4),
                       pinTheme: PinTheme(
                         shape: PinCodeFieldShape.box,
                         borderRadius: BorderRadius.circular(8),
@@ -67,7 +77,7 @@ class OTPVerificationScreen extends HookConsumerWidget {
                         inactiveColor: Colors.grey.shade400,
                       ),
                       onChanged: (value) {
-                        isCompleted.value = value.length == 5;
+                        isCompleted.value = value.length == 4;
                       },
                     ),
 
@@ -94,8 +104,15 @@ class OTPVerificationScreen extends HookConsumerWidget {
                           ? () {
                               ref
                                   .read(authProvider.notifier)
-                                  .register("email", "password");
-                              context.go(AppRoutes.newPassword, extra: email);
+                                  .verifyOTP(
+                                    otp: otpController.text,
+                                    regData: PreReg(
+                                      email: preReg!.email,
+                                      firstName: preReg.firstName,
+                                      lastName: preReg.lastName,
+                                      password: preReg.password,
+                                    ),
+                                  );
                             }
                           : null,
                       child: Container(

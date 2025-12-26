@@ -13,7 +13,6 @@ class ForgotPasswordScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final emailController = useTextEditingController();
-    final theme = Theme.of(context);
 
     final isFilled = useState(false);
 

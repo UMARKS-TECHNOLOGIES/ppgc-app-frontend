@@ -109,8 +109,6 @@ void handleLoginSuccess(String apiToken, String userId) async {
 
   // Save profile ID to shared prefs
   await storage.saveProfileKey(userId);
-
-  print("Login data saved!");
 }
 
 void logout() async {

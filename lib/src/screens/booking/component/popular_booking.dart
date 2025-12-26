@@ -14,39 +14,54 @@ class PopularRoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 220,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: NetworkImageFallback(
-              imageUrl: room.imageUrl,
-              height: 140,
-              borderRadius: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              child: NetworkImageFallback(
+                imageUrl: room.imageUrl,
+                height: 140,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            room.roomName,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Text(
-            room.location,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(room.pricePerNight),
-              Row(
+            Container(
+              padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.star, size: 14, color: Colors.amber),
-                  Text(room.rating.toString()),
+                  const SizedBox(height: 8),
+                  Text(
+                    room.roomName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    room.location,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(room.pricePerNight),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
+                          Text(room.rating.toString()),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -72,7 +87,6 @@ class PopularRoomsSection extends ConsumerWidget {
                 "Most Popular",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              Text("View all", style: TextStyle(color: Colors.grey)),
             ],
           ),
         ),

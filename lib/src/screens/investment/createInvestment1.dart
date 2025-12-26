@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../components/shared/userIconAction.dart';
 import '../../routes/routeConstant.dart';
+import '../../store/investment_provider.dart';
 import '../../utils/themeData.dart';
 
-// Main screen widget
-class LandBankingScreen extends StatefulWidget {
+class LandBankingScreen extends ConsumerStatefulWidget {
   final String packageSubtitle;
   final VoidCallback onBack;
 
@@ -17,16 +18,16 @@ class LandBankingScreen extends StatefulWidget {
   });
 
   @override
-  State<LandBankingScreen> createState() => _LandBankingScreenState();
+  ConsumerState<LandBankingScreen> createState() => _LandBankingScreenState();
 }
 
-class _LandBankingScreenState extends State<LandBankingScreen> {
+class _LandBankingScreenState extends ConsumerState<LandBankingScreen> {
   int _selectedIndex = 0;
-  // only ONE can be selected
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light grey background
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -36,13 +37,16 @@ class _LandBankingScreenState extends State<LandBankingScreen> {
         ),
         title: Text(
           widget.packageSubtitle,
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
-        actions: [UserIcon(route: "")],
+        actions: const [UserIcon(route: "")],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -51,68 +55,54 @@ class _LandBankingScreenState extends State<LandBankingScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            // Grid of package cards
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 1.0, // Square cards
+                childAspectRatio: 1,
                 children: [
-                  PackageCard(
+                  _buildCard(
+                    index: 0,
                     icon: Icons.calendar_view_month_rounded,
                     percentage: '2%',
                     frequency: 'Monthly',
-                    iconColor: Colors.orange,
-                    isSelected: _selectedIndex == 0,
-                    onTap: () {
-                      setState(() => _selectedIndex = 0);
-                    },
+                    color: Colors.orange,
                   ),
-                  PackageCard(
+                  _buildCard(
+                    index: 1,
                     icon: Icons.monetization_on_rounded,
                     percentage: '10%',
                     frequency: 'Quarterly',
-                    iconColor: Colors.blue,
-                    isSelected: _selectedIndex == 1,
-                    onTap: () {
-                      setState(() => _selectedIndex = 1);
-                    },
+                    color: Colors.blue,
                   ),
-                  PackageCard(
+                  _buildCard(
+                    index: 2,
                     icon: Icons.calendar_today_rounded,
                     percentage: '15%',
                     frequency: 'Half yearly',
-                    iconColor: Colors.green,
-                    isSelected: _selectedIndex == 2,
-                    onTap: () {
-                      setState(() => _selectedIndex = 2);
-                    },
+                    color: Colors.green,
                   ),
-                  PackageCard(
+                  _buildCard(
+                    index: 3,
                     icon: Icons.event_available_rounded,
                     percentage: '30%',
                     frequency: 'Yearly',
-                    iconColor: Colors.purple,
-                    isSelected: _selectedIndex == 3,
-                    onTap: () {
-                      setState(() => _selectedIndex = 3);
-                    },
+                    color: Colors.purple,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            // Next button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  _handleNext;
                   context.push(
                     AppRoutes.add2,
                     extra: {
                       "investment": widget.packageSubtitle,
-
                       "plan": _selectedIndex == 0
                           ? "2"
                           : _selectedIndex == 1
@@ -123,8 +113,9 @@ class _LandBankingScreenState extends State<LandBankingScreen> {
                     },
                   );
                 },
+
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.zero, // Important for gradient
+                  padding: EdgeInsets.zero,
                   elevation: 0,
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -136,8 +127,6 @@ class _LandBankingScreenState extends State<LandBankingScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppColors.fromColor, AppColors.toColor],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -160,34 +149,21 @@ class _LandBankingScreenState extends State<LandBankingScreen> {
       ),
     );
   }
-}
 
-// Reusable card widget for each package
+  Widget _buildCard({
+    required int index,
+    required IconData icon,
+    required String percentage,
+    required String frequency,
+    required Color color,
+  }) {
+    final isSelected = _selectedIndex == index;
 
-class PackageCard extends StatelessWidget {
-  final IconData icon;
-  final String percentage;
-  final String frequency;
-  final Color iconColor;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const PackageCard({
-    super.key,
-    required this.icon,
-    required this.percentage,
-    required this.frequency,
-    required this.iconColor,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: () => setState(() => _selectedIndex = index),
       borderRadius: BorderRadius.circular(12),
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -198,17 +174,15 @@ class PackageCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withValues(alpha: 0.1),
-              spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: iconColor),
+            Icon(icon, size: 32, color: color),
             const SizedBox(height: 12),
             Text(
               percentage,
@@ -223,5 +197,20 @@ class PackageCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleNext() {
+    ref
+        .read(investmentProvider.notifier)
+        .updateDraft(
+          title: widget.packageSubtitle,
+          percentage: _selectedIndex == 0
+              ? 2
+              : _selectedIndex == 1
+              ? 10
+              : _selectedIndex == 2
+              ? 15
+              : 30,
+        );
   }
 }

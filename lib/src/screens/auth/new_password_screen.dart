@@ -16,7 +16,6 @@ class NewPassword extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final firstPasswordController = useTextEditingController();
     final secondPasswordController = useTextEditingController();
-    final theme = Theme.of(context); // Access the theme
 
     final isFilled = useState(false);
 

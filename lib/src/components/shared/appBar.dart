@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppgc_pro/src/components/shared/userIconAction.dart';
-import 'package:ppgc_pro/src/routes/indexRoute.dart';
 import 'package:ppgc_pro/src/routes/routeConstant.dart';
+import 'package:ppgc_pro/src/store/models/user_models.dart';
 
 import '../notification/NotificationBellWithGradient.dart';
 
-PreferredSizeWidget buildDynamicAppBar(String path, context) {
-  final tab = BottomTabExtension.fromPath(path);
-
+PreferredSizeWidget buildDynamicAppBar({
+  required String path,
+  required BuildContext context,
+  required Profile user,
+  required String location,
+}) {
   return AppBar(
     backgroundColor: Colors.white,
     elevation: 0,
@@ -22,7 +26,7 @@ PreferredSizeWidget buildDynamicAppBar(String path, context) {
         children: [
           UserIcon(route: AppRoutes.profile),
           Text(
-            "Hey Ugochi Miracle",
+            "${user.firstName} ${user.lastName}",
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -32,10 +36,7 @@ PreferredSizeWidget buildDynamicAppBar(String path, context) {
             ),
           ),
           SizedBox(height: 4),
-          Text(
-            "Lagos, Nigeria",
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text(location, style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     ),
@@ -53,8 +54,6 @@ PreferredSizeWidget buildDynamicAppBar(String path, context) {
 }
 
 PreferredSizeWidget investmentAppBar(String path, context) {
-  final tab = BottomTabExtension.fromPath(path);
-
   return AppBar(
     backgroundColor: Colors.white,
     elevation: 0,
@@ -72,11 +71,17 @@ PreferredSizeWidget customAppBar({
   bool isBack = false,
   bool isCenterTitle = true,
   bool isAction = true,
+  List<Widget> action = const [],
 }) {
   return AppBar(
     backgroundColor: Colors.white,
     elevation: 0,
     toolbarHeight: 70,
+    systemOverlayStyle: const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark, // Android
+      statusBarBrightness: Brightness.light, // iOS
+    ),
 
     // ⬅️ BACK BUTTON (GoRouter-safe)
     leading: isBack
@@ -94,13 +99,6 @@ PreferredSizeWidget customAppBar({
     centerTitle: isCenterTitle,
 
     // 👤 ACTION ICON (conditionally rendered)
-    actions: isAction && route != null
-        ? [
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: UserIcon(route: route),
-            ),
-          ]
-        : [],
+    actions: action,
   );
 }

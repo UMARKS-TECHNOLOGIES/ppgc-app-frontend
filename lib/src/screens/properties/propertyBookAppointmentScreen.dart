@@ -1,106 +1,113 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ppgc_pro/src/routes/routeConstant.dart';
 import 'package:ppgc_pro/src/utils/themeData.dart';
 
-class BookInspectionScreen extends StatefulWidget {
+import '../../store/authProvider.dart';
+import '../../store/models/property_models.dart';
+import '../../store/property_provider.dart';
+
+class BookInspectionScreen extends HookConsumerWidget {
   final String propertyId;
 
   const BookInspectionScreen({super.key, required this.propertyId});
 
   @override
-  State<BookInspectionScreen> createState() => _BookInspectionScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(() => GlobalKey<FormState>());
 
-class _BookInspectionScreenState extends State<BookInspectionScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _noteController = TextEditingController();
+    final nameController = useTextEditingController();
+    final phoneController = useTextEditingController();
+    final noteController = useTextEditingController();
 
-  DateTime? selectedDate;
-  TimeOfDay? selectedTime;
+    final selectedDate = useState<DateTime?>(null);
+    final selectedTime = useState<TimeOfDay?>(null);
+    final user = ref.watch(currentUserProvider);
+    final propertyStatus = ref.watch(propertyStatusProvider);
 
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 60)),
-    );
-    if (date != null) setState(() => selectedDate = date);
-  }
-
-  Future<void> _pickTime() async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time != null) setState(() => selectedTime = time);
-  }
-
-  void _submit() {
-    if (_formKey.currentState!.validate() &&
-        selectedDate != null &&
-        selectedTime != null) {
-      final inspectionDetails = {
-        'propertyId': widget.propertyId,
-        'fullName': _nameController.text,
-        'phone': _phoneController.text,
-        'note': _noteController.text,
-        'date': DateFormat.yMMMMd().format(selectedDate!),
-        'time': selectedTime!.format(context),
-      };
-
-      // TODO: send to backend, API, Firebase, etc.
-      print("Booking submitted: $inspectionDetails");
-      context.push(AppRoutes.done, extra: "Inspection booked successfully!");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inspection booked successfully!')),
+    Future<void> pickDate() async {
+      final now = DateTime.now();
+      final date = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 60)),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please complete all required fields.'),
-          backgroundColor: Colors.pink,
-        ),
-      );
+      if (date != null) selectedDate.value = date;
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
+    Future<void> pickTime() async {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (time != null) selectedTime.value = time;
+    }
+
+    //  register a listener
+    ref.listen(propertyStatusProvider, (previous, next) {
+      if (next == PropertyStatus.submittedInspection) {
+        context.push(AppRoutes.done, extra: "Inspection booked successfully!");
+      }
+    });
+
+    void submit() {
+      if (propertyStatus == PropertyStatus.submittingInspection) {
+        return;
+      }
+      if (formKey.currentState!.validate() &&
+          selectedDate.value != null &&
+          selectedTime.value != null) {
+        final PropertyInspectionRequest inspectionDetails =
+            PropertyInspectionRequest(
+              propertyId: propertyId,
+              fullName: nameController.text,
+              phone: phoneController.text,
+              note: noteController.text,
+              date: DateFormat.yMMMMd().format(selectedDate.value!),
+              time: selectedTime.value!.format(context),
+            );
+        if (user == null) {
+          return;
+        }
+        ref
+            .read(propertyProvider.notifier)
+            .propertyBookingInspection(inspectionDetails, user.token);
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Book Inspection')),
       body: SafeArea(
         child: Container(
           padding: const EdgeInsets.all(16.0),
-          margin: EdgeInsets.only(top: 20),
+          margin: const EdgeInsets.only(top: 20),
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: ListView(
               children: [
                 TextFormField(
-                  controller: _nameController,
+                  controller: nameController,
                   decoration: const InputDecoration(labelText: 'Full Name'),
                   validator: (val) =>
                       val == null || val.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
+
                 TextFormField(
-                  controller: _phoneController,
+                  controller: phoneController,
                   decoration: const InputDecoration(labelText: 'Phone Number'),
                   keyboardType: TextInputType.phone,
                   validator: (val) =>
                       val == null || val.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
-                // Date Picker Field Styled like Input
+
                 GestureDetector(
-                  onTap: _pickDate,
+                  onTap: pickDate,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -114,8 +121,8 @@ class _BookInspectionScreenState extends State<BookInspectionScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          selectedDate != null
-                              ? 'Date: ${DateFormat.yMMMMd().format(selectedDate!)}'
+                          selectedDate.value != null
+                              ? 'Date: ${DateFormat.yMMMMd().format(selectedDate.value!)}'
                               : 'Pick a Date',
                           style: TextStyle(color: Colors.grey.shade800),
                         ),
@@ -127,9 +134,8 @@ class _BookInspectionScreenState extends State<BookInspectionScreen> {
 
                 const SizedBox(height: 12),
 
-                // Time Picker Field Styled like Input
                 GestureDetector(
-                  onTap: _pickTime,
+                  onTap: pickTime,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -143,8 +149,8 @@ class _BookInspectionScreenState extends State<BookInspectionScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          selectedTime != null
-                              ? 'Time: ${selectedTime!.format(context)}'
+                          selectedTime.value != null
+                              ? 'Time: ${selectedTime.value!.format(context)}'
                               : 'Pick a Time',
                           style: TextStyle(color: Colors.grey.shade800),
                         ),
@@ -155,14 +161,16 @@ class _BookInspectionScreenState extends State<BookInspectionScreen> {
                 ),
 
                 const SizedBox(height: 12),
+
                 TextFormField(
-                  controller: _noteController,
+                  controller: noteController,
                   decoration: const InputDecoration(
                     labelText: 'Additional Notes (optional)',
                     alignLabelWithHint: true,
                   ),
                   maxLines: 3,
                 ),
+
                 const SizedBox(height: 50),
 
                 DecoratedBox(
@@ -175,8 +183,7 @@ class _BookInspectionScreenState extends State<BookInspectionScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: TextButton(
-                    onPressed: _submit,
-
+                    onPressed: () => submit(),
                     style: ButtonStyle(
                       padding: const WidgetStatePropertyAll(
                         EdgeInsets.symmetric(vertical: 14, horizontal: 40),
@@ -190,15 +197,22 @@ class _BookInspectionScreenState extends State<BookInspectionScreen> {
                         Colors.white,
                       ),
                     ),
-                    child: Text(
-                      "Book inspection",
-                      style: TextStyle(
-                        color: Colors.black,
-
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    child: propertyStatus != PropertyStatus.submittingInspection
+                        ? const Text(
+                            "Book inspection",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : Text(
+                            'Sending! Please hold ',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ],

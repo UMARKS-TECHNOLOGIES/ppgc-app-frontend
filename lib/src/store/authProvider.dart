@@ -96,45 +96,6 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   // Register
-  Future<void> register(String email, String password) async {
-    final uri = Uri.parse('$PRO_API_BASE_ROUTE/auth/');
-
-    // timeout this request so it doesn't loaad forever
-    try {
-      state = state.copyWith(status: AuthStatus.authenticating);
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-        AppUser user = AppUser.fromJson(decoded);
-        await StorageService().saveUserToken(user.token);
-      } else {
-        final decoded = jsonDecode(response.body);
-        if (decoded.message != null) {
-          state = state.copyWith(
-            status: AuthStatus.error,
-            errorMessage: decoded.message,
-          );
-        } else {
-          state = state.copyWith(
-            status: AuthStatus.error,
-            errorMessage: 'Authentication failed',
-          );
-        }
-      }
-    } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      );
-    }
-  }
 
   // Forgot Password
   Future<void> forgotPassword(String email) async {}
@@ -206,12 +167,12 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   // Verify Email
-  Future<void> verifyEmail(
-    String email,
-    String firstName,
-    String lastName,
-    String password,
-  ) async {
+  Future<void> verifyEmail({
+    required String email,
+    required String firstName,
+    required String lastName,
+    required String password,
+  }) async {
     state = state.copyWith(status: AuthStatus.sendingEmail);
     final uri = Uri.parse(
       '$PRO_API_BASE_ROUTE/auth/request-email-verification-code/',
@@ -229,7 +190,6 @@ class AuthController extends StateNotifier<AuthState> {
       );
 
       if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
         //   navigate to otp verification screen
         state = state.copyWith(
           status: AuthStatus.emailSent,
@@ -257,14 +217,8 @@ class AuthController extends StateNotifier<AuthState> {
             : 'Something went wrong! Please try again.';
 
         state = state.copyWith(
-          status: AuthStatus.emailSent,
+          status: AuthStatus.emailVerificationFailed,
           errorMessage: message,
-          preReg: PreReg.fromJson({
-            'email': email,
-            'first_name': firstName,
-            'last_name': lastName,
-            'password': password,
-          }),
         );
       }
     } catch (e) {
@@ -278,7 +232,7 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   // Verify OTP
-  Future<void> verifyOTP(String otp, PreReg regData) async {
+  Future<void> verifyOTP({required String otp, required PreReg regData}) async {
     state = state.copyWith(status: AuthStatus.verifyingEmail);
     final uri = Uri.parse(
       '$PRO_API_BASE_ROUTE/auth/confirm-email-verification-code/',
@@ -291,8 +245,13 @@ class AuthController extends StateNotifier<AuthState> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({}),
+        body: jsonEncode({...regData.toJson(), 'code': otp}),
       );
+
+      if (response.statusCode == 200) {
+        state = state.copyWith(status: AuthStatus.verified, errorMessage: null);
+        //  navigate to login screen
+      }
     } catch (e) {
       final message = 'Something went wrong! Please try again.';
 
@@ -304,7 +263,6 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> login(String email, String password) async {
-    print('login called');
     final uri = Uri.parse('$PRO_API_BASE_ROUTE/auth/signin/');
 
     try {
@@ -323,7 +281,6 @@ class AuthController extends StateNotifier<AuthState> {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body) as Map<String, dynamic>;
 
-        print(decoded);
         // Adapt this to your actual API response shape
         final user = AppUser.fromJson(decoded);
         final userProfile = Profile.fromJson(decoded);
@@ -349,15 +306,12 @@ class AuthController extends StateNotifier<AuthState> {
           loginError: message,
         );
       } else {
-        print("hhhfhfhfhfhfhfhfhf");
         state = state.copyWith(
           errorMessage: "Something went wrong",
           status: AuthStatus.error,
         );
       }
     } catch (e) {
-      print("error");
-      print(e);
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
@@ -391,7 +345,6 @@ final firstLaunchProvider = FutureProvider<bool>((ref) async {
 });
 
 final localAuthStatusProvider = FutureProvider<AuthStatus>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
   final storage = StorageService();
   final authNotifier = ref.read(authProvider.notifier);
 
@@ -400,6 +353,7 @@ final localAuthStatusProvider = FutureProvider<AuthStatus>((ref) async {
 
   if (token != null && profileKey != null) {
     final profileJson = await LocalStorageService.getObject(profileKey);
+
     if (profileJson != null) {
       final profile = Profile.fromJson(profileJson);
       final AppUser user = AppUser(

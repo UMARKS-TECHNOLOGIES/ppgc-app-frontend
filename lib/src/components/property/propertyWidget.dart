@@ -1,26 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:ppgc_pro/src/store/models/property_models.dart';
 
 import '../faildImageFallBack.dart';
 
 class PropertyCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final Map<String, int>? roomsAndToilet; // made optional
-  final String price;
+  final Property property;
 
-  const PropertyCard({
-    super.key,
-    required this.imageUrl,
-    required this.title,
-    required this.price,
-    this.roomsAndToilet,
-  });
+  const PropertyCard({super.key, required this.property});
 
   @override
   Widget build(BuildContext context) {
-    final bedrooms = roomsAndToilet?["bedroom"] ?? 0;
-    final toilets = roomsAndToilet?["toilet"] ?? 0;
-
     return Row(
       children: [
         ClipRRect(
@@ -28,57 +17,58 @@ class PropertyCard extends StatelessWidget {
           child: NetworkImageFallback(
             height: 70,
             width: 70,
-            imageUrl: imageUrl,
+            imageUrl: property.coverImageUrl,
           ),
         ),
         const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black87,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                property.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              price,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.green,
+              const SizedBox(height: 4),
+              Text(
+                property.price,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: Colors.green,
+                ),
               ),
-            ),
-            Row(
-              children: [
-                const Icon(Icons.bed_rounded, color: Colors.black38),
-                const SizedBox(width: 5),
-                Text(
-                  bedrooms.toString(),
-                  style: const TextStyle(fontSize: 13, color: Colors.black38),
-                ),
-                const SizedBox(width: 2),
-                const Text(
-                  "Bedrooms",
-                  style: TextStyle(fontSize: 13, color: Colors.black38),
-                ),
-                const SizedBox(width: 5),
-                const Icon(Icons.shower_sharp, color: Colors.black38),
-                Text(
-                  toilets.toString(),
-                  style: const TextStyle(fontSize: 13, color: Colors.black38),
-                ),
-                const SizedBox(width: 2),
-                const Text(
-                  "Bathroom",
-                  style: TextStyle(fontSize: 13, color: Colors.black38),
-                ),
-              ],
-            ),
-          ],
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: Colors.black38,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      property.area.cityOrTown,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black38,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );

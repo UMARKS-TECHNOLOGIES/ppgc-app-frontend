@@ -55,7 +55,7 @@ class FindInvestmentScreen extends StatelessWidget {
             const SizedBox(height: 60),
             // Empty / Content state
             Center(
-              child: true
+              child: false
                   ? Container(
                       padding: const EdgeInsets.all(5.0),
                       decoration: BoxDecoration(

@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:ppgc_pro/src/components/property/shimmer.dart';
+import 'package:shimmer/shimmer.dart';
 
 class PropertyDetailsShimmer extends StatelessWidget {
   const PropertyDetailsShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ShimmerWrapper(
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 🔹 Hero image
-            Container(
-              height: 240,
-              width: double.infinity,
-              color: Colors.grey.shade300,
-            ),
+            Container(height: 240, width: double.infinity, color: Colors.white),
 
             const SizedBox(height: 16),
 
@@ -80,7 +78,7 @@ class PropertyDetailsShimmer extends StatelessWidget {
                           width: 70,
                           height: 70,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade400,
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
                           ),
                         );
@@ -116,7 +114,7 @@ class PropertyDetailsShimmer extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(6),
       ),
     );
@@ -127,7 +125,7 @@ class PropertyDetailsShimmer extends StatelessWidget {
       width: 14,
       height: 14,
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -137,7 +135,7 @@ class PropertyDetailsShimmer extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
       ),
     );

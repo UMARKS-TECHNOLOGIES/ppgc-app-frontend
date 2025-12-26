@@ -1,32 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:ppgc_pro/src/components/faildImageFallBack.dart';
+import 'package:ppgc_pro/src/routes/routeConstant.dart';
 
-class Featuredpropertywidget extends StatelessWidget {
-  final List<Map<String, String>> properties = [
-    {
-      'imageUrl':
-          'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-      'title': 'The Kings Apartment',
-      'subtitle': 'Foste (mazamaz)',
-    },
-    {
-      'imageUrl':
-          'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
-      'title': 'Unique Suites',
-      'subtitle': '23 Wuye Road',
-    },
-    {
-      'imageUrl':
-          'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
-      'title': 'Unique Suites',
-      'subtitle': '23 Wuye Road',
-    },
-  ];
+import '../store/models/property_models.dart';
+import '../store/property_provider.dart';
 
-  Featuredpropertywidget({super.key});
+class FeaturedPropertyWidget extends ConsumerWidget {
+  const FeaturedPropertyWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(propertyProvider);
+    final properties = state.popularProperties;
+
+    if (state.status == PropertyStatus.loading) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (properties.isEmpty) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: Text("No featured properties")),
+      );
+    }
+
     return SizedBox(
       height: 180,
       child: ListView.separated(
@@ -37,20 +39,23 @@ class Featuredpropertywidget extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = properties[index];
 
-          return ClipRRect(
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(0),
-              bottomRight: Radius.circular(30),
-              topLeft: Radius.circular(30),
-              topRight: Radius.circular(30),
-            ),
+          return InkWell(
+            onTap: () {
+              context.push(AppRoutes.singleProperty, extra: item.id);
+            },
             child: Stack(
               children: [
                 NetworkImageFallback(
-                  imageUrl: item['imageUrl']!,
+                  imageUrl: item.coverImageUrl,
                   width: 250,
                   height: 180,
                   fit: BoxFit.cover,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(0),
+                    bottomRight: Radius.circular(30),
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
                 ),
                 Positioned(
                   left: 12,
@@ -59,7 +64,7 @@ class Featuredpropertywidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item['title']!,
+                        item.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -68,7 +73,7 @@ class Featuredpropertywidget extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        item['subtitle']!,
+                        item.title,
                         style: const TextStyle(
                           fontSize: 13,
                           color: Colors.white70,
