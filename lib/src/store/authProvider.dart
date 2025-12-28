@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
-import 'package:ppgc_pro/src/store/utils/api_route.dart';
+import 'package:ppgc_pro/src/store/utils/app_constant.dart';
 import 'package:ppgc_pro/src/store/utils/secure_storage.dart';
 import 'package:ppgc_pro/src/store/utils/shared_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,9 +81,8 @@ class AuthController extends StateNotifier<AuthState> {
   AuthController() : super(AuthState.initial());
 
   /// Called after fresh login OR app restart
-  void restoreSession({required AppUser user, required Profile profile}) {
+  void restoreSession({required AppUser user}) {
     state = state.copyWith(
-      userProfile: profile,
       user: user,
       status: AuthStatus.authenticated,
       errorMessage: null,
@@ -103,43 +102,48 @@ class AuthController extends StateNotifier<AuthState> {
   // Reset Password
 
   //
-  Future<void> checkAuthStatus() async {
-    state.copyWith(status: AuthStatus.authenticating);
-    final token = await StorageService().getUserToken();
-    final profileKey = await StorageService().getProfileKey();
-    if (token != null && profileKey != null) {
-      try {
-        final userProfile = await LocalStorageService.getObject(profileKey);
-        if (userProfile != null) {
-          state.copyWith(userProfile: Profile.fromJson(userProfile));
-          state.copyWith(status: AuthStatus.authenticated);
-        } else {
-          state.copyWith(
-            status: AuthStatus.error,
-            errorMessage: 'Profile not found',
-          );
-        }
-      } catch (e) {
-        state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
-      }
-    }
-  }
 
   /// Mock Profile calls
-  Future<void> fetchProfile({required String email}) async {
+  Future<void> fetchProfile() async {
+    state = state.copyWith(status: AuthStatus.loadingProfile);
+    final uri = Uri.parse('$PRO_API_BASE_ROUTE/settings/');
     try {
-      state = state.copyWith(status: AuthStatus.authenticating);
-      // Simulate network call
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Replace with actual API call
-      final user = testUserProfile;
-
-      state = state.copyWith(
-        userProfile: user,
-        status: AuthStatus.authenticated,
+      http.Response response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          "Authorization": "Bearer ${state.user?.token ?? ""}",
+        },
       );
+      print(state.user?.token);
+      print(response.body);
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        state = state.copyWith(
+          status: AuthStatus.profileLoaded,
+          errorMessage: null,
+          userProfile: Profile.fromJson(json),
+        );
+      } else if (response.statusCode >= 300 && response.statusCode < 500) {
+        final decoded = jsonDecode(response.body);
+        final message = decoded is Map && decoded['detail'] != null
+            ? decoded['detail']
+            : 'Failed loading profile';
+        state = state.copyWith(
+          status: AuthStatus.profileError,
+          errorMessage: message,
+        );
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.profileError,
+          errorMessage: "Something went wrong",
+        );
+      }
     } catch (e) {
+      print(e.toString());
+
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
@@ -276,17 +280,20 @@ class AuthController extends StateNotifier<AuthState> {
         },
         body: jsonEncode({'email': email, 'password': password}),
       );
-      // print(response.statusCode);
-      // print(response.body);
+      print(response.statusCode);
+      print(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body) as Map<String, dynamic>;
 
         // Adapt this to your actual API response shape
         final user = AppUser.fromJson(decoded);
         final userProfile = Profile.fromJson(decoded);
+
         await StorageService().saveUserToken(user.token);
-        await StorageService().saveProfileKey(user.id);
-        await LocalStorageService.setObject(user.id, userProfile.toJson());
+        await LocalStorageService.setObject(
+          appUserKeyConstant,
+          user.toLocalStateJson(),
+        );
 
         state = state.copyWith(
           user: user,
@@ -312,6 +319,7 @@ class AuthController extends StateNotifier<AuthState> {
         );
       }
     } catch (e) {
+      print(e.toString());
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
@@ -331,6 +339,7 @@ final userProfileProvider = Provider<Profile?>((ref) {
 final authStatusProvider = Provider<AuthStatus>((ref) {
   return ref.watch(authProvider.select((s) => s.status));
 });
+
 final currentUserProvider = Provider<AppUser?>((ref) {
   return ref.watch(authProvider.select((s) => s.user));
 });
@@ -349,23 +358,21 @@ final localAuthStatusProvider = FutureProvider<AuthStatus>((ref) async {
   final authNotifier = ref.read(authProvider.notifier);
 
   final token = await storage.getUserToken();
-  final profileKey = await storage.getProfileKey();
 
-  if (token != null && profileKey != null) {
-    final profileJson = await LocalStorageService.getObject(profileKey);
+  if (token != null) {
+    final userJson = await LocalStorageService.getObject(appUserKeyConstant);
 
-    if (profileJson != null) {
-      final profile = Profile.fromJson(profileJson);
+    if (userJson != null) {
       final AppUser user = AppUser(
-        id: profile.id,
-        email: profile.email,
+        id: userJson["id"],
+        email: userJson["email"],
         token: token,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
+        firstName: userJson["firstName"] ?? "",
+        lastName: userJson["lastName"] ?? "",
       );
 
       // 🔁 Restore session into memory
-      authNotifier.restoreSession(profile: profile, user: user);
+      authNotifier.restoreSession(user: user);
 
       return AuthStatus.authenticated;
     }

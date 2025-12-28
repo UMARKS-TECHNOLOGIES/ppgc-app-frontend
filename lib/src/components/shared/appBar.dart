@@ -10,7 +10,7 @@ import '../notification/NotificationBellWithGradient.dart';
 PreferredSizeWidget buildDynamicAppBar({
   required String path,
   required BuildContext context,
-  required Profile user,
+  required AppUser user,
   required String location,
 }) {
   return AppBar(

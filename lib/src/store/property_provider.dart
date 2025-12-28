@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
-import 'package:ppgc_pro/src/store/utils/api_route.dart';
+import 'package:ppgc_pro/src/store/utils/app_constant.dart';
 
 import 'models/property_models.dart';
 

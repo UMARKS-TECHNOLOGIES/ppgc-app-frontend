@@ -84,7 +84,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) {
           return Consumer(
             builder: (context, ref, _) {
-              final user = ref.watch(userProfileProvider);
+              final user = ref.watch(currentUserProvider);
 
               final path = state.fullPath ?? '';
               PreferredSizeWidget? appBar;

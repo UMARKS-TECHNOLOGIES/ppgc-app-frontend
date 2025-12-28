@@ -13,8 +13,8 @@ final testUserProfile = Profile(
   email: "testuser@example.com",
   emailVerified: true,
   userRole: "admin",
-  createdAt: DateTime.parse("2025-12-11T13:19:46.548Z"),
-  dateOfBirth: DateTime.parse("1995-06-15"),
+  createdAt: "2025-12-11T13:19:46.548Z",
+  dateOfBirth: "1995-06-15",
   phoneNumber: "+2348012345678",
   address: "123 Test Street, Lagos, Nigeria",
   emailNotification: true,
@@ -25,7 +25,6 @@ final testUserProfile = Profile(
     secureUrl:
         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
   ),
-  accessToken: "dummy_access_token_123",
 );
 
 /// ----- Auth State -----
@@ -42,6 +41,9 @@ enum AuthStatus {
   verified,
 
   //
+  loadingProfile,
+  profileLoaded,
+  profileError,
 }
 
 class AppUser {
@@ -63,8 +65,8 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: json['id'].toString(),
-      firstName: json['firstName'] ?? '',
-      lastName: json['lastName'] ?? '',
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
       email: json['email'] ?? '',
       token: json['access_token'] ?? '',
     );
@@ -80,6 +82,15 @@ class AppUser {
       'token': token,
     };
   }
+
+  Map<String, dynamic> toLocalStateJson() {
+    return {
+      'id': id,
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+    };
+  }
 }
 
 // ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -93,15 +104,14 @@ class Profile {
   final String lastName;
   final bool emailVerified;
   final String userRole;
-  final DateTime createdAt;
-  final DateTime dateOfBirth;
+  final String createdAt;
+  final String dateOfBirth;
   final String phoneNumber;
   final String address;
   final bool emailNotification;
   final bool pushNotification;
   final String gender;
-  final ProfileAvatar profileAvatar;
-  final String accessToken;
+  final ProfileAvatar? profileAvatar;
 
   const Profile({
     required this.nin,
@@ -120,19 +130,9 @@ class Profile {
     required this.pushNotification,
     required this.gender,
     required this.profileAvatar,
-    required this.accessToken,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
-    DateTime _parseDate(dynamic value, DateTime fallback) {
-      if (value == null) return fallback;
-      try {
-        return DateTime.parse(value.toString());
-      } catch (_) {
-        return fallback;
-      }
-    }
-
     return Profile(
       nin: json['nin'] ?? "".toString(),
       firstName: json['first_name'] as String? ?? '',
@@ -141,17 +141,16 @@ class Profile {
       email: json['email'] as String? ?? '',
       emailVerified: json['email_verified'] as bool? ?? false,
       userRole: json['user_role'] as String? ?? '',
-      createdAt: _parseDate(json['created_at'], DateTime.now()),
-      dateOfBirth: _parseDate(json['date_of_birth'], DateTime(1970, 1, 1)),
+      createdAt: json['created_at'] as String? ?? '',
+      dateOfBirth: json['date_of_birth'] as String? ?? '',
       phoneNumber: json['phone_number'] as String? ?? '',
       address: json['address'] as String? ?? '',
       emailNotification: json['email_notification'] as bool? ?? false,
       pushNotification: json['push_notification'] as bool? ?? false,
       gender: json['gender'] as String? ?? '',
-      profileAvatar: json['profile_avatar'] is Map<String, dynamic>
+      profileAvatar: json['profile_avatar'] != null
           ? ProfileAvatar.fromJson(json['profile_avatar'])
-          : ProfileAvatar(publicId: '', secureUrl: ''),
-      accessToken: json['access_token'] as String? ?? '',
+          : null,
     );
   }
 
@@ -161,15 +160,14 @@ class Profile {
       'email': email,
       'email_verified': emailVerified,
       'user_role': userRole,
-      'created_at': createdAt.toIso8601String(),
-      'date_of_birth': dateOfBirth.toIso8601String(),
+      'created_at': createdAt,
+      'date_of_birth': dateOfBirth,
       'phone_number': phoneNumber,
       'address': address,
       'email_notification': emailNotification,
       'push_notification': pushNotification,
       'gender': gender,
-      'profile_avatar': profileAvatar.toJson(),
-      'access_token': accessToken,
+      'profile_avatar': profileAvatar?.toJson(),
     };
   }
 }
@@ -182,8 +180,8 @@ class ProfileAvatar {
 
   factory ProfileAvatar.fromJson(Map<String, dynamic> json) {
     return ProfileAvatar(
-      publicId: json['public_id'],
-      secureUrl: json['secure_url'],
+      publicId: json['public_id']?.toString() ?? '',
+      secureUrl: json['secure_url']?.toString() ?? '',
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:ppgc_pro/src/components/shared/btnsWidgets.dart';
@@ -12,12 +13,23 @@ const Color kPrimaryBlack = Color(0xFF1A1A1A);
 const Color kSecondaryGrey = Color(0xFF828282);
 const Color kBgWhite = Colors.white;
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends HookConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
+    final notifier = ref.read(authProvider.notifier);
+
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (profile == null) {
+          //   fetch profile
+          notifier.fetchProfile();
+        }
+      });
+      return null;
+    }, []);
 
     // Defensive UI: profile not yet loaded
     if (profile == null) {
@@ -36,7 +48,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 20),
 
             /// Profile Image
-            buildProfileAvatar(profileImage: profile.profileAvatar.secureUrl),
+            buildProfileAvatar(profileImage: profile.profileAvatar!.secureUrl),
 
             const SizedBox(height: 40),
 

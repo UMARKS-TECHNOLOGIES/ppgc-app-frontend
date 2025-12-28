@@ -125,7 +125,6 @@ flutter:
      - assets/auth/google.png
      - assets/auth/password_success.png
      - assets/auth/reg_header.png
-     - assets/properties/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

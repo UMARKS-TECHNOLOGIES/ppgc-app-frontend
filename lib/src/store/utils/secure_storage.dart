@@ -57,26 +57,6 @@ class StorageService {
     );
   }
 
-  // --- SHARED PREFERENCES METHODS (For Profile Key) ---
-
-  /// Save the profile key/ID to standard Shared Preferences
-  Future<void> saveProfileKey(String profileKey) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyProfileId, profileKey);
-  }
-
-  /// Retrieve the profile key/ID
-  Future<String?> getProfileKey() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyProfileId);
-  }
-
-  /// Delete the profile key
-  Future<void> deleteProfileKey() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyProfileId);
-  }
-
   // --- HELPER METHODS ---
 
   /// Checks if the user is "logged in" by verifying if a token exists
@@ -98,20 +78,4 @@ class StorageService {
     await prefs.remove(_keyProfileId);
     // Or use prefs.clear() if you want to wipe ALL shared_prefs
   }
-}
-
-// utils
-void handleLoginSuccess(String apiToken, String userId) async {
-  final storage = StorageService();
-
-  // Save token securely
-  await storage.saveUserToken(apiToken);
-
-  // Save profile ID to shared prefs
-  await storage.saveProfileKey(userId);
-}
-
-void logout() async {
-  await StorageService().clearAll();
-  // Navigate back to login screen
 }

@@ -97,7 +97,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                   /// Avatar (already state-aware)
                   buildProfileAvatar(
-                    profileImage: profile.profileAvatar.secureUrl,
+                    profileImage: profile.profileAvatar!.secureUrl,
                   ),
 
                   const SizedBox(height: 30),
