@@ -6,6 +6,7 @@ import 'package:ppgc_pro/src/components/shared/btnsWidgets.dart';
 
 import '../../routes/routeConstant.dart';
 import '../../store/authProvider.dart';
+import '../../store/models/user_models.dart';
 import 'ProfileImagePicker.dart';
 
 // Colors
@@ -18,13 +19,26 @@ class ProfileScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AuthState>(authProvider, (prev, next) {
+      final error = next.errorMessage;
+      if (error != null && error != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(error, style: TextStyle(fontSize: 14)),
+          ),
+        );
+      }
+    });
+
     final profile = ref.watch(userProfileProvider);
+    final authStatus = ref.watch(authStatusProvider);
     final notifier = ref.read(authProvider.notifier);
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        print(profile.toString());
         if (profile == null) {
-          //   fetch profile
           notifier.fetchProfile();
         }
       });
@@ -32,11 +46,14 @@ class ProfileScreen extends HookConsumerWidget {
     }, []);
 
     // Defensive UI: profile not yet loaded
-    if (profile == null) {
+    if (authStatus == AuthStatus.loadingProfile) {
       return const Scaffold(
         backgroundColor: kBgWhite,
         body: Center(child: CircularProgressIndicator()),
       );
+    }
+    if (profile == null) {
+      return SizedBox.shrink();
     }
 
     return Scaffold(

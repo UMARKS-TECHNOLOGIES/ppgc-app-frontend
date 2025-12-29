@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
+import 'package:ppgc_pro/src/store/utility_provider.dart';
 import 'package:ppgc_pro/src/store/utils/app_constant.dart';
 import 'package:ppgc_pro/src/store/utils/secure_storage.dart';
 import 'package:ppgc_pro/src/store/utils/shared_storage.dart';
@@ -78,7 +79,9 @@ class AuthState {
 
 /// ----- Auth Controller -----
 class AuthController extends StateNotifier<AuthState> {
-  AuthController() : super(AuthState.initial());
+  final Ref ref;
+
+  AuthController(this.ref) : super(AuthState.initial());
 
   /// Called after fresh login OR app restart
   void restoreSession({required AppUser user}) {
@@ -107,6 +110,16 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> fetchProfile() async {
     state = state.copyWith(status: AuthStatus.loadingProfile);
     final uri = Uri.parse('$PRO_API_BASE_ROUTE/settings/');
+
+    final connectivity = ref.read(connectivityProvider);
+
+    if (connectivity.connection == ConnectivityStatus.disconnected) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: "No internet connection",
+      );
+      return;
+    }
     try {
       http.Response response = await http.get(
         uri,
@@ -116,9 +129,7 @@ class AuthController extends StateNotifier<AuthState> {
           "Authorization": "Bearer ${state.user?.token ?? ""}",
         },
       );
-      print(state.user?.token);
-      print(response.body);
-      print(response.statusCode);
+
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         state = state.copyWith(
@@ -330,7 +341,7 @@ class AuthController extends StateNotifier<AuthState> {
 
 /// ----- Provider -----
 final authProvider = StateNotifierProvider<AuthController, AuthState>(
-  (ref) => AuthController(),
+  (ref) => AuthController(ref),
 );
 
 final userProfileProvider = Provider<Profile?>((ref) {
