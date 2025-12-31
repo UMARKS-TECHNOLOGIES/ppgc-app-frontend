@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:ppgc_pro/src/components/shared/userAvatar.dart';
 
 import '../../components/faildImageFallBack.dart';
 import '../../routes/routeConstant.dart';
+import '../../store/booking_provider.dart';
 import '../../store/utils/dummyData.dart';
+import '../../utils/themeData.dart';
 
 // Define the colors based on the design
-const Color kPrimaryBlack = Color(0xFF1A1A1A);
-const Color kSecondaryGrey = Color(0xFF828282);
-const Color kPriceGreen = Color(0xFF27AE60);
-const Color kYellowColor = Color(0xFFEED202);
+// const Color AppColors.fromColor = Color(0xFFEED202);
 const Color kBgWhite = Colors.white;
 
-class RoomDetailScreen extends StatelessWidget {
+class RoomDetailScreen extends ConsumerWidget {
   const RoomDetailScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final room = ref.watch(selectedRoomProvider);
     return Scaffold(
       backgroundColor: kBgWhite,
       // AppBar with a back button
@@ -24,7 +26,7 @@ class RoomDetailScreen extends StatelessWidget {
         backgroundColor: kBgWhite,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kPrimaryBlack),
+          icon: const Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -38,7 +40,7 @@ class RoomDetailScreen extends StatelessWidget {
               width: double.infinity,
               height: 250, // Adjust height as needed
               child: NetworkImageFallback(
-                imageUrl: '',
+                imageUrl: room?.imageUrl ?? "",
                 height: 10,
                 fit: BoxFit.cover,
               ),
@@ -49,45 +51,45 @@ class RoomDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Room Title and Price
-                  const Text(
-                    "Room 12 Kings Hotel",
+                  Text(
+                    room?.roomName ?? "",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: kPrimaryBlack,
+                      color: AppColors.black,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "₦40,000.00 / Night",
+                  SizedBox(height: 8),
+                  Text(
+                    "${room?.pricePerNight ?? 0}/ Night",
                     style: TextStyle(
                       fontSize: 16,
-                      color: kPriceGreen,
+                      color: AppColors.green,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 10),
                   // Location and Rating Row
                   Row(
-                    children: const [
+                    children: [
                       Icon(
                         Icons.location_on_outlined,
                         size: 18,
-                        color: kSecondaryGrey,
+                        color: AppColors.grayColor,
                       ),
                       SizedBox(width: 5),
                       Text(
-                        "Agip, Port Harcourt",
-                        style: TextStyle(color: kSecondaryGrey),
+                        room?.location ?? "",
+                        style: TextStyle(color: AppColors.grayColor),
                       ),
                       Spacer(),
-                      Icon(Icons.star, size: 18, color: kYellowColor),
+                      Icon(Icons.star, size: 18, color: AppColors.fromColor),
                       SizedBox(width: 5),
                       Text(
-                        "4.5",
+                        room?.rating.toString() ?? '',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: kPrimaryBlack,
+                          color: AppColors.black,
                         ),
                       ),
                     ],
@@ -99,13 +101,13 @@ class RoomDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: kPrimaryBlack,
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    "Your comfortable retreat awaits. Relax and recharge in our well-appointed room, featuring modern amenities for a seamless stay.",
-                    style: TextStyle(color: kSecondaryGrey, height: 1.5),
+                  Text(
+                    room?.description ?? '',
+                    style: TextStyle(color: AppColors.grayColor, height: 1.5),
                   ),
                   const SizedBox(height: 25),
                   // "What we offer" Section
@@ -114,25 +116,36 @@ class RoomDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: kPrimaryBlack,
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 20),
                   // Row of amenity icons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      _AmenityItem(
-                        icon: Icons.hot_tub_outlined,
-                        label: "Hot Bath",
-                      ),
-                      _AmenityItem(
-                        icon: Icons.ac_unit,
-                        label: "Air Conditioning",
-                      ),
-                      _AmenityItem(icon: Icons.restaurant, label: "Breakfast"),
-                      _AmenityItem(icon: Icons.wifi, label: "Wifi"),
-                    ],
+                  Builder(
+                    builder: (context) {
+                      // 1. Get the list (safely handle nulls)
+                      final amenityList = room?.amenities ?? [];
+
+                      if (amenityList.isEmpty) {
+                        return const Text(
+                          "No amenities listed",
+                          style: TextStyle(color: AppColors.grayColor),
+                        );
+                      }
+
+                      // 2. Render dynamic items
+                      return Wrap(
+                        spacing: 24.0, // Horizontal space between items
+                        runSpacing: 16.0, // Vertical space between lines
+                        alignment: WrapAlignment.start,
+                        children: amenityList.map<Widget>((amenityString) {
+                          return _AmenityItem(
+                            icon: _getAmenityIcon(amenityString),
+                            label: amenityString,
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                   const SizedBox(height: 25),
                   // Reviews Section Header
@@ -144,13 +157,13 @@ class RoomDetailScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: kPrimaryBlack,
+                          color: AppColors.black,
                         ),
                       ),
                       Text(
                         "Add Review",
                         style: TextStyle(
-                          color: kYellowColor,
+                          color: AppColors.toColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -195,8 +208,8 @@ class RoomDetailScreen extends StatelessWidget {
               context.push(AppRoutes.reviewSummary);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: kYellowColor,
-              foregroundColor: kPrimaryBlack,
+              backgroundColor: AppColors.fromColor,
+              foregroundColor: AppColors.black,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -214,26 +227,26 @@ class RoomDetailScreen extends StatelessWidget {
   }
 }
 
-// Helper widget for a single amenity item (icon and label)
-class _AmenityItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
+IconData _getAmenityIcon(String amenity) {
+  // Normalize string: convert to lowercase and remove spaces/hyphens for better matching
+  final key = amenity.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
 
-  const _AmenityItem({required this.icon, required this.label});
+  if (key.contains('wifi') || key.contains('internet')) return Icons.wifi;
+  if (key.contains('ac') || key.contains('aircond')) return Icons.ac_unit;
+  if (key.contains('tv') || key.contains('television')) return Icons.tv;
+  if (key.contains('bath') || key.contains('hot') || key.contains('tub'))
+    return Icons.hot_tub;
+  if (key.contains('food') ||
+      key.contains('breakfast') ||
+      key.contains('restaurant'))
+    return Icons.restaurant;
+  if (key.contains('gym') || key.contains('fitness'))
+    return Icons.fitness_center;
+  if (key.contains('pool')) return Icons.pool;
+  if (key.contains('park')) return Icons.local_parking;
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: kSecondaryGrey, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(color: kSecondaryGrey, fontSize: 12),
-        ),
-      ],
-    );
-  }
+  // Default fallback icon if no match found
+  return Icons.check_circle_outline;
 }
 
 // Helper widget for a single review item
@@ -255,13 +268,7 @@ class _ReviewItem extends StatelessWidget {
       child: Row(
         children: [
           // User Avatar
-          CircleAvatar(
-            radius: 24,
-            backgroundImage: AssetImage(
-              userImage,
-            ), // Replace with network image if needed
-            backgroundColor: kSecondaryGrey,
-          ),
+          UserAvatar(imgUrl: 'https://example.com/profile.jpg', radius: 30),
           const SizedBox(width: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +277,7 @@ class _ReviewItem extends StatelessWidget {
                 name,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: kPrimaryBlack,
+                  color: AppColors.black,
                 ),
               ),
               const SizedBox(height: 5),
@@ -290,7 +297,7 @@ class _ReviewItem extends StatelessWidget {
                     children: List.generate(5, (index) {
                       return Icon(
                         index < rating.floor() ? Icons.star : Icons.star_border,
-                        color: kYellowColor,
+                        color: AppColors.fromColor,
                         size: 16,
                       );
                     }),
@@ -301,6 +308,32 @@ class _ReviewItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Helper widget for a single amenity item (icon and label)
+class _AmenityItem extends StatelessWidget {
+  final IconData icon;
+
+  final String label;
+
+  const _AmenityItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.grayColor, size: 28),
+
+        const SizedBox(height: 8),
+
+        Text(
+          label,
+
+          style: const TextStyle(color: AppColors.grayColor, fontSize: 12),
+        ),
+      ],
     );
   }
 }

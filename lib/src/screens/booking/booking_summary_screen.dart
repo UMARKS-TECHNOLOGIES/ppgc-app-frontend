@@ -1,32 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:ppgc_pro/src/utils/themeData.dart';
 
 import '../../components/faildImageFallBack.dart';
+import '../../components/shared/datetimeparser.dart';
+import '../../store/authProvider.dart';
+import '../../store/booking_provider.dart';
 
 // Define the colors based on the design
-const Color kPrimaryBlack = Color(0xFF1A1A1A);
-const Color kSecondaryGrey = Color(0xFF828282);
-const Color kYellowColor = Color(0xFFEED202);
-const Color kBgWhite = Colors.white;
 
-class ReviewSummaryScreen extends StatelessWidget {
+class ReviewSummaryScreen extends ConsumerWidget {
   const ReviewSummaryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final room = ref.watch(selectedRoomProvider);
+    final user = ref.read(currentUserProvider);
+
     return Scaffold(
-      backgroundColor: kBgWhite,
+      backgroundColor: AppColors.white,
       // AppBar with a back button and title
       appBar: AppBar(
-        backgroundColor: kBgWhite,
+        backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kPrimaryBlack),
+          icon: Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           "Review Summary",
-          style: TextStyle(color: kPrimaryBlack, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -50,25 +54,36 @@ class ReviewSummaryScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  const _SummaryRow(
+                  _SummaryRow(
                     label: "Booking Date",
-                    value: "7th May, 2025",
+                    value: formatDateWithSuffix(DateTime.now()),
                   ),
-                  const _SummaryRow(label: "Check In", value: "7th May, 2025"),
-                  const _SummaryRow(label: "Check Out", value: "7th May, 2025"),
-                  const _SummaryRow(label: "Guests", value: "7th May, 2025"),
+                  _SummaryRow(
+                    label: "Check In",
+                    value: formatDateWithSuffix(DateTime.now()),
+                  ),
+                  _SummaryRow(
+                    label: "Check Out",
+                    value: formatDateWithSuffix(
+                      DateTime.now().add(const Duration(days: 1)),
+                    ),
+                  ),
+                  _SummaryRow(
+                    label: "Guests",
+                    value: "${user?.lastName ?? ''} ${user?.firstName ?? ''}",
+                  ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 10.0),
                     child: Divider(),
                   ),
-                  const _SummaryRow(label: "Amounts", value: "7th May, 2025"),
-                  const _SummaryRow(
-                    label: "Additional charges",
-                    value: "7th May, 2025",
+                  _SummaryRow(
+                    label: "Amounts",
+                    value: room?.pricePerNight ?? '',
                   ),
-                  const _SummaryRow(
+                  const _SummaryRow(label: "Additional charges", value: "0.0"),
+                  _SummaryRow(
                     label: "Total",
-                    value: "7th May, 2025",
+                    value: room?.pricePerNight ?? '',
                     isBold: true, // Make the Total value bold
                   ),
                   const Padding(
@@ -81,16 +96,16 @@ class ReviewSummaryScreen extends StatelessWidget {
                     children: [
                       const Text(
                         "Debit Card",
-                        style: TextStyle(color: kPrimaryBlack, fontSize: 16),
+                        style: TextStyle(color: AppColors.black, fontSize: 16),
                       ),
                       GestureDetector(
                         onTap: () {
                           // Handle change payment method action
                         },
                         child: const Text(
-                          "Change",
+                          "Add card",
                           style: TextStyle(
-                            color: kPrimaryBlack,
+                            color: AppColors.black,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -109,7 +124,7 @@ class ReviewSummaryScreen extends StatelessWidget {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20.0),
         decoration: const BoxDecoration(
-          color: kBgWhite,
+          color: AppColors.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
@@ -125,8 +140,8 @@ class ReviewSummaryScreen extends StatelessWidget {
               // Handle payment action
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: kYellowColor,
-              foregroundColor: kPrimaryBlack,
+              backgroundColor: AppColors.fromColor,
+              foregroundColor: AppColors.black,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -165,12 +180,12 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: kPrimaryBlack, fontSize: 16),
+            style: const TextStyle(color: AppColors.black, fontSize: 16),
           ),
           Text(
             value,
             style: TextStyle(
-              color: kSecondaryGrey,
+              color: AppColors.grayColor,
               fontSize: 16,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:ppgc_pro/src/utils/themeData.dart';
 
 import '../../../components/faildImageFallBack.dart';
 import '../../../routes/routeConstant.dart';
@@ -56,7 +57,7 @@ class RoomListTile extends StatelessWidget {
                       children: [
                         Text(room.pricePerNight),
                         const Spacer(),
-                        const Icon(Icons.star, size: 14, color: Colors.amber),
+                        Icon(Icons.star, size: 14, color: AppColors.fromColor),
                         const SizedBox(width: 4),
                         Text(room.rating.toString()),
                       ],
@@ -97,6 +98,7 @@ class AvailableRoomsSection extends ConsumerWidget {
             RoomListTile(
               room: rooms[i],
               onTap: () {
+                roomNotifier.fetchRoomById(id: rooms[i].id);
                 context.push(AppRoutes.singleRoom(rooms[i].id));
               },
             ),

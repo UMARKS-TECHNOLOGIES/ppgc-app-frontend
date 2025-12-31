@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../components/faildImageFallBack.dart';
 import '../../../store/booking_provider.dart';
 import '../../../store/models/booking_model.dart';
+import '../../../utils/themeData.dart';
 
 class PopularRoomCard extends StatelessWidget {
   final HotelRoom room;
@@ -51,7 +52,11 @@ class PopularRoomCard extends StatelessWidget {
                       Text(room.pricePerNight),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 14, color: Colors.amber),
+                          const Icon(
+                            Icons.star,
+                            size: 14,
+                            color: AppColors.fromColor,
+                          ),
                           Text(room.rating.toString()),
                         ],
                       ),

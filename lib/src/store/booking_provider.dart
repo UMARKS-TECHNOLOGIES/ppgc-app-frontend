@@ -133,24 +133,12 @@ class RoomController extends StateNotifier<RoomState> {
     }
   }
 
-  Future<void> fetchRoomById(String id) async {
+  Future<void> fetchRoomById({required String id}) async {
+    state = state.copyWith(status: RoomStatus.loading);
     try {
-      state = state.copyWith(status: RoomStatus.loading);
-
-      final url = Uri.parse('$PRO_API_BASE_ROUTE/rooms/$id/');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final room = HotelRoom.fromJson(data);
-
-        state = state.copyWith(room: room, status: RoomStatus.loaded);
-      } else {
-        state = state.copyWith(
-          status: RoomStatus.error,
-          errorMessage: 'Failed to fetch room (${response.statusCode})',
-        );
-      }
+      // filter through the rooms to find the one with the matching id
+      final room = state.rooms.firstWhere((room) => room.id == id);
+      state = state.copyWith(room: room, status: RoomStatus.loaded);
     } catch (e) {
       state = state.copyWith(
         status: RoomStatus.error,
