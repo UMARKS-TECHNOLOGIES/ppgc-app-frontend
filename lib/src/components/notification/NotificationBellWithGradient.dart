@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../service/local_notification_service.dart';
 import '../../routes/routeConstant.dart';
 
 class AnimatedNotificationBell extends StatefulWidget {
@@ -72,7 +73,13 @@ class _AnimatedNotificationBellState extends State<AnimatedNotificationBell>
           ],
         ),
         child: InkWell(
-          onTap: () => context.push(AppRoutes.notification),
+          onTap: () {
+            LocalNotificationService.show(
+              title: 'Reminder',
+              body: 'This is a local notification',
+            );
+            context.push(AppRoutes.notification);
+          },
           child: Padding(
             padding: const EdgeInsets.all(4.0),
             child: Container(
