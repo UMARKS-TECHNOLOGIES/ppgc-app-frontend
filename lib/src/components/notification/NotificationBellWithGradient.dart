@@ -74,10 +74,17 @@ class _AnimatedNotificationBellState extends State<AnimatedNotificationBell>
         ),
         child: InkWell(
           onTap: () {
-            LocalNotificationService.show(
-              title: 'Reminder',
-              body: 'This is a local notification',
+            LocalNotificationService.schedule(
+              id: 0,
+              title: 'Meeting',
+              body: 'Project sync starts now',
+              when: DateTime.now().add(const Duration(seconds: 5)),
             );
+            // LocalNotificationService.show(
+            //   title: 'Reminder',
+            //   body: 'This is a local notification',
+            // );
+
             context.push(AppRoutes.notification);
           },
           child: Padding(
