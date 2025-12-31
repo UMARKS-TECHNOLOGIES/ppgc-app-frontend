@@ -260,7 +260,12 @@ class AuthController extends StateNotifier<AuthState> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({...regData.toJson(), 'code': otp}),
+        body: jsonEncode({
+          ...regData.toJson(),
+          'code': otp,
+          // Un comment  below  to send the app token to the server
+          // "appFcmToken": FCMService.getToken(),
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -289,7 +294,11 @@ class AuthController extends StateNotifier<AuthState> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({
+          'email': email, 'password': password,
+          // Un comment  below  to send the app token to the server
+          // "appFcmToken": FCMService.getToken()
+        }),
       );
       print(response.statusCode);
       print(response.body);
