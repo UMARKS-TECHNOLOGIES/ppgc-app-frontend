@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "24326076624",
+    "project_id": "prince-properties-5d071",
+    "storage_bucket": "prince-properties-5d071.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:24326076624:android:904d3ddbc533cce445c6d5",
+        "android_client_info": {
+          "package_name": "com.example.ppgc_pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3l2m3iZlmaW5H9JgV1587y0ubGVQn8Qo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
